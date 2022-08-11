@@ -1,0 +1,7 @@
+main_client = "github"
+
+[github]
+username = "raphgl"
+
+[codeberg]
+username = "raphgl"
