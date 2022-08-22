@@ -1,8 +1,15 @@
+# TODO program breaks if a repo is non existent in the other client
 import asyncio
 import aiohttp
 import toml
+import os
+from pathlib import Path
 
 MAIN_CLIENT = ""
+CLIENT_URL = {
+    'github': 'https://github.com',
+    'codeberg': 'https://codeberg.org'
+}
 
 
 async def main():
@@ -12,17 +19,27 @@ async def main():
     global MAIN_CLIENT
     MAIN_CLIENT = toml_config['main_client']
 
+    syngit_data_path = f"{os.environ['HOME']}/.local/share/syngit"
+    if not os.path.exists(syngit_data_path):
+        os.mkdir(syngit_data_path)
+
     async with aiohttp.ClientSession() as session:
         clients = await init_clients(session, toml_config)
         for repo in clients[MAIN_CLIENT]:
-            if not is_in_sync(session, clients, repo):
-                clone_repo(clients, repo)
+            if not await is_in_sync(session, clients, repo):
+                await clone_repo(syngit_data_path, clients, repo)
 
-def clone_repo(clients, repo_name):
+
+async def clone_repo(repos_dir, clients, repo_name):
     """
     Clones repos with repo_name from all the referenced clients and adds their remotes
     """
-    pass
+    for client in clients:
+        client_path = f"{repos_dir}/{client}"
+        Path(client_path).mkdir(parents=True, exist_ok=True)
+        os.chdir(client_path)
+        await asyncio.create_subprocess_shell(f"git clone {CLIENT_URL[client]}/{repo_name}", stdin=None, stdout=None, stderr=asyncio.subprocess.STDOUT)
+    os.chdir(os.environ['HOME'])
 
 
 async def is_in_sync(session, clients, repo_name):
@@ -37,10 +54,14 @@ async def is_in_sync(session, clients, repo_name):
                     commits[client] = await response.json()
             case 'codeberg':
                 async with session.get(f"https://codeberg.org/api/v1/repos/{repo_name}/commits/") as response:
-                    commits['codeberg'] = await response.json()
+                    commits[client] = await response.json()
 
     for client in commits:
-        if commits[client][0]['sha'] != commits[MAIN_CLIENT][0]['sha']:
+        try:
+            if commits[client][0]['sha'] != commits[MAIN_CLIENT][0]['sha']:
+                return False
+        # KeyError if repo does not exist in one of the clients
+        except KeyError:
             return False
     return True
 
