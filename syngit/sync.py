@@ -106,14 +106,14 @@ class RepoSynchronizer:
             if async_info[index]:
                 await self.__push_to_repo(repo)
 
-
     async def __push_to_repo(self, repo):
         # TODO add authentication to be able to pull to repo
         os.chdir(f"{self.data_path}/{repo.split('/')[1]}")
         os.system(f"git pull")
         for client in self.clients:
             if client != self.main_client:
-                os.system(f"git remote add {client} {CLIENT_URL[client]}/{repo}")
+                os.system(
+                    f"git remote add {client} {CLIENT_URL[client]}/{repo}")
 
                 push_cmd = await subprocess.create_subprocess_shell(
                     "git push {client} -f",
