@@ -77,15 +77,13 @@ class RepoSynchronizer:
         """
         # TODO add check if repo folder already exists
         # TODO add pipe in case repo is private using toml's password
-        for client in self.clients:
-            client_path = f"{self.data_path}/{client}"
-            Path(client_path).mkdir(parents=True, exist_ok=True)
-            os.chdir(client_path)
-            await asyncio.create_subprocess_shell(
-                f"git clone {CLIENT_URL[client]}/{repo_name}",
-                stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
-                stderr=subprocess.STDOUT
-            )
+        Path(self.data_path).mkdir(parents=True, exist_ok=True)
+        os.chdir(self.data_path)
+        await asyncio.create_subprocess_shell(
+            f"git clone {CLIENT_URL[self.main_client]}/{repo_name}",
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT
+        )
         os.chdir(os.environ['HOME'])
 
         return self.clients
@@ -99,6 +97,25 @@ class RepoSynchronizer:
 
         # retrieve and clone unsynced repos
         async_info = await asyncio.gather(*sync_info)
+
         for index, repo in enumerate(self.clients[self.main_client]):
             if async_info[index]:
                 await self.clone_repo(repo)
+
+        for index, repo in enumerate(self.clients[self.main_client]):
+            if async_info[index]:
+                await self.__push_to_repo(repo)
+
+
+    async def __push_to_repo(self, repo):
+        # TODO add authentication to be able to pull to repo
+        os.chdir(f"{self.data_path}/{repo.split('/')[1]}")
+        os.system(f"git pull")
+        for client in self.clients:
+            if client != self.main_client:
+                os.system(f"git remote add {client} {CLIENT_URL[client]}/{repo}")
+
+                push_cmd = await subprocess.create_subprocess_shell(
+                    "git push {client} -f",
+                    stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL)
