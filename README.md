@@ -1,9 +1,10 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
+<!--  
   <a href="https://github.com/RaphGL/Syngit">
     <img src="logo.png" alt="Logo" height="80">
-  </a>
+  </a> --->
 
   <h3 align="center">A simple to use repo synchronization tool</h3>
   <p align="center">
@@ -47,6 +48,7 @@ Syngit is a CLI and init service that let's you synchronize repositories across 
 ### Built With
 
 - [Python](https://www.python.org/)
+- [Poetry](https://python-poetry.org/)
 - [AioHttp](https://docs.aiohttp.org/en/stable/)
 - [TOML](https://github.com/uiri/toml)
 
@@ -54,7 +56,7 @@ Syngit is a CLI and init service that let's you synchronize repositories across 
 
 ## Getting Started
 
-TODO
+To get Syngit to work you need to use SSH login on the clients you wish to synchronize. Read [this article on how to set it up](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) if you're uncertain.
 
 ### Installation
 
@@ -64,7 +66,27 @@ TODO
 
 ## Usage
 
-How to use it
+1. Create a `$HOME/.config/syngit.toml` file
+2. Make something akin to this:
+
+```toml
+main_client = "github"
+
+[github]
+username = "RaphGL"
+
+[codeberg]
+username = "RaphGL"
+
+[gitlab]
+username = "RaphGL"
+```
+
+3. Enable the syngit service:
+
+```sh
+$ systemctl enable syngit --now
+```
 
 <!-- LICENSE -->
 
@@ -73,11 +95,6 @@ How to use it
 Distributed under LICENSE License. See [`LICENSE`](https://github.com/RaphGL/Syngit/blob/main/LICENSE) for more information.
 
 <!-- ACKNOWLEDGEMENTS -->
-
-## Acknowledgements
-
-- [TODO]()
-
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
@@ -94,3 +111,4 @@ Distributed under LICENSE License. See [`LICENSE`](https://github.com/RaphGL/Syn
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/othneildrew
 [product-screenshot]: images/screenshot.png
+
