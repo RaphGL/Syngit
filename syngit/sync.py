@@ -64,23 +64,25 @@ class RepoSynchronizer:
                             git_clients[git_client] = await response.json()
 
         clients = dict()
-        for client in git_clients:
-            repos = []
-            for i in range(len(git_clients[client])):
-                repos.append(git_clients[client][i]['full_name'])
-            clients[client] = repos
+        try:
+            for client in git_clients:
+                repos = []
+                if len(git_clients[client]) > 0:
+                    for i in range(len(git_clients[client])):
+                        repos.append(git_clients[client][i]['full_name'])
+                    clients[client] = repos
+        except KeyError: 
+            print("You're being rate limited. Please try again later.")
         return clients
 
     async def clone_repo(self, repo_name):
         """
         Clones repos with repo_name from all the referenced clients and adds their remotes
         """
-        # TODO add check if repo folder already exists
-        # TODO add pipe in case repo is private using toml's password
         Path(self.data_path).mkdir(parents=True, exist_ok=True)
         os.chdir(self.data_path)
         await asyncio.create_subprocess_shell(
-            f"git clone {CLIENT_URL[self.main_client]}/{repo_name}",
+            f"git clone git@{CLIENT_URL[self.main_client]}:{repo_name}.git",
             stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT
         )
@@ -90,32 +92,32 @@ class RepoSynchronizer:
 
     async def synchronize(self):
         sync_info = []
-        for repo in self.clients[self.main_client]:
-            is_synced_task = asyncio.create_task(
-                self.is_in_sync(repo))
-            sync_info.append(is_synced_task)
+        try:
+            for repo in self.clients[self.main_client]:
+                is_synced_task = asyncio.create_task(
+                    self.is_in_sync(repo))
+                sync_info.append(is_synced_task)
 
-        # retrieve and clone unsynced repos
-        async_info = await asyncio.gather(*sync_info)
+            # retrieve and clone unsynced repos
+            async_info = await asyncio.gather(*sync_info)
 
-        for index, repo in enumerate(self.clients[self.main_client]):
-            if async_info[index]:
-                await self.clone_repo(repo)
+            for index, repo in enumerate(self.clients[self.main_client]):
+                if not async_info[index]:
+                    await self.clone_repo(repo)
 
-        for index, repo in enumerate(self.clients[self.main_client]):
-            if async_info[index]:
-                await self.__push_to_repo(repo)
+            for index, repo in enumerate(self.clients[self.main_client]):
+                if not async_info[index]:
+                    # only push to repo if repo exists in main client and on target client
+                    self.__push_to_repo(repo)
+        except:
+            return
 
-    async def __push_to_repo(self, repo):
-        # TODO add authentication to be able to pull to repo
+    def __push_to_repo(self, repo):
         os.chdir(f"{self.data_path}/{repo.split('/')[1]}")
         os.system(f"git pull")
         for client in self.clients:
-            if client != self.main_client:
+            if client != self.main_client and repo in self.clients[client]:
+                print(f"pushing repo {repo}")
                 os.system(
-                    f"git remote add {client} {CLIENT_URL[client]}/{repo}")
-
-                push_cmd = await subprocess.create_subprocess_shell(
-                    "git push {client} -f",
-                    stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL)
+                    f"git remote add {client} git@{CLIENT_URL[client]}:{repo}")
+                os.system(f"git push -f --all {client}")
