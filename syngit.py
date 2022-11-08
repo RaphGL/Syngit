@@ -1,9 +1,14 @@
-from asyncio import subprocess
-from config import CLIENT_URL
 from pathlib import Path
+from asyncio import subprocess
 import asyncio
 import aiohttp
 import os
+import toml
+
+CLIENT_URL = {
+    'github': 'github.com',
+    'codeberg': 'codeberg.org'
+}
 
 
 class RepoSynchronizer:
@@ -71,7 +76,7 @@ class RepoSynchronizer:
                     for i in range(len(git_clients[client])):
                         repos.append(git_clients[client][i]['full_name'])
                     clients[client] = repos
-        except KeyError: 
+        except KeyError:
             print("You're being rate limited. Please try again later.")
         return clients
 
@@ -91,6 +96,9 @@ class RepoSynchronizer:
         return self.clients
 
     async def synchronize(self):
+        """
+        Synchronizes all the known client with the repos in the main client
+        """
         sync_info = []
         try:
             for repo in self.clients[self.main_client]:
@@ -121,3 +129,23 @@ class RepoSynchronizer:
                 os.system(
                     f"git remote add {client} git@{CLIENT_URL[client]}:{repo}")
                 os.system(f"git push -f --all {client}")
+
+
+async def main():
+    # TODO read toml file from somewhere not inside this repo
+    with open('syngit.toml') as f:
+        toml_config = toml.load(f)
+
+    syngit_data_path = f"{os.environ['HOME']}/.local/share/syngit"
+    if not os.path.exists(syngit_data_path):
+        os.mkdir(syngit_data_path)
+
+    async with RepoSynchronizer(
+            main_client=toml_config['main_client'],
+            config_toml=toml_config,
+            data_path=syngit_data_path) as repo_sync:
+        await repo_sync.synchronize()
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
