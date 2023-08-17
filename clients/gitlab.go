@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/raphgl/syngit/config"
 )
 
 type GitlabRepo struct {
@@ -14,8 +16,8 @@ type GitlabRepo struct {
 	ForkedFromProject *any   `json:"forked_from_project"`
 }
 
-func GetGitlabRepos() ([]GithubRepo, error) {
-	APIPoint := fmt.Sprintf("https://gitlab.com/api/v4/users/%s/projects", user)
+func GetGitlabRepos(cfg *config.Config) ([]GithubRepo, error) {
+	APIPoint := fmt.Sprintf("https://gitlab.com/api/v4/users/%s/projects", cfg.Client["gitlab"].Username)
 	res, err := http.Get(APIPoint)
 	if err != nil {
 		return nil, err
@@ -32,7 +34,7 @@ func (gl *GitlabRepo) GetName() string {
 }
 
 func (gl *GitlabRepo) GetFullName() string {
-    return gl.PathWithNamespace
+	return gl.PathWithNamespace
 }
 
 func (gl *GitlabRepo) GetURL() string {

@@ -18,8 +18,6 @@ type GitRepo interface {
 	IsFork() bool
 }
 
-const user = "raphgl"
-
 func CloneRepo(r GitRepo) {
 	repoURL := r.GetURL()
     // TODO: use path from config or fallback to a default

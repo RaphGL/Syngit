@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/raphgl/syngit/config"
 )
 
 type GithubRepo struct {
@@ -14,8 +16,8 @@ type GithubRepo struct {
 	Fork     bool   `json:"fork"`
 }
 
-func GetGithubRepos() ([]GithubRepo, error) {
-	APIPoint := fmt.Sprintf("https://api.github.com/users/%s/repos", user)
+func GetGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
+	APIPoint := fmt.Sprintf("https://api.github.com/users/%s/repos", cfg.Client["github"].Username)
 	res, err := http.Get(APIPoint)
 	if err != nil {
 		return nil, err
@@ -32,7 +34,7 @@ func (gr *GithubRepo) GetName() string {
 }
 
 func (gr *GithubRepo) GetFullName() string {
-    return gr.FullName
+	return gr.FullName
 }
 
 func (gr *GithubRepo) GetURL() string {

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/raphgl/syngit/config"
 )
 
 type CodebergRepo struct {
@@ -14,8 +16,8 @@ type CodebergRepo struct {
 	Fork     bool   `json:"fork"`
 }
 
-func GetCodebergRepos() ([]CodebergRepo, error) {
-	APIPoint := fmt.Sprintf("https://codeberg.org/api/v1/users/%s/repos", user)
+func GetCodebergRepos(cfg *config.Config) ([]CodebergRepo, error) {
+	APIPoint := fmt.Sprintf("https://codeberg.org/api/v1/users/%s/repos", cfg.Client["codeberg"].Username)
 	res, err := http.Get(APIPoint)
 	if err != nil {
 		return nil, err
