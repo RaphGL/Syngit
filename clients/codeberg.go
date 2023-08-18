@@ -18,6 +18,7 @@ type CodebergRepo struct {
 
 func GetCodebergRepos(cfg *config.Config) ([]CodebergRepo, error) {
 	APIPoint := fmt.Sprintf("https://codeberg.org/api/v1/users/%s/repos", cfg.Client["codeberg"].Username)
+    fmt.Println(APIPoint)
 	res, err := http.Get(APIPoint)
 	if err != nil {
 		return nil, err
