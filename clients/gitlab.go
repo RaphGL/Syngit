@@ -16,14 +16,14 @@ type GitlabRepo struct {
 	ForkedFromProject *any   `json:"forked_from_project"`
 }
 
-func GetGitlabRepos(cfg *config.Config) ([]GithubRepo, error) {
+func getGitlabRepos(cfg *config.Config) ([]GitlabRepo, error) {
 	APIPoint := fmt.Sprintf("https://gitlab.com/api/v4/users/%s/projects", cfg.Client["gitlab"].Username)
 	res, err := http.Get(APIPoint)
 	if err != nil {
 		return nil, err
 	}
 
-	var repos []GithubRepo
+	var repos []GitlabRepo
 	json.NewDecoder(res.Body).Decode(&repos)
 
 	return repos, nil

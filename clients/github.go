@@ -16,7 +16,7 @@ type GithubRepo struct {
 	Fork     bool   `json:"fork"`
 }
 
-func GetGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
+func getGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
 	APIPoint := fmt.Sprintf("https://api.github.com/users/%s/repos", cfg.Client["github"].Username)
 	res, err := http.Get(APIPoint)
 	if err != nil {

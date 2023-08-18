@@ -17,9 +17,10 @@ func main() {
 		return
 	}
 
-
-	repos, _ := clients.GetCodebergRepos(cfg)
-	for _, r := range repos {
-		clients.CloneRepo(&r, cfg)
+	repos := clients.GetRepos(cfg)
+	for _, mirrors := range repos {
+		for _, m := range mirrors {
+			clients.CloneRepo(m, cfg)
+		}
 	}
 }

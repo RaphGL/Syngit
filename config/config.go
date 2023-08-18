@@ -22,7 +22,7 @@ type (
 		// authentication token or password for the client
 		Token string `toml:"token"`
 		// disable syncing this client
-		Enable bool `toml:"enable"`
+		Disable bool `toml:"disable"`
 		// repositories to be ignored
 		Ignore []string `toml:"ignore"`
 	}
