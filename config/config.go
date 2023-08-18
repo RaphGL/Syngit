@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -45,6 +46,25 @@ func LoadConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// making sure required fields are filled
+	failedCheck := false
+	if len(cfg.MainClient) == 0 {
+		fmt.Fprintln(os.Stderr, "Error: Did not specified what is the `main_client`")
+		failedCheck = true
+	}
+
+	for clientName, client := range cfg.Client {
+		if len(client.Username) == 0 {
+			fmt.Fprintln(os.Stderr, "Error: Missing username for", clientName)
+			failedCheck = true
+		}
+	}
+
+	if failedCheck {
+		os.Exit(1)
+	}
+
 	return &cfg, nil
 }
 
