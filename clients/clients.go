@@ -21,6 +21,21 @@ type GitRepo interface {
 
 type GitRepoMap = map[string][]GitRepo
 
+func appendRepo(repos *GitRepoMap, r GitRepo, cfg *config.Config) {
+	key := r.GetName()
+	switch r.IsFork() {
+	case true:
+		if cfg.IncludeForks {
+			(*repos)[key] = append((*repos)[key], r)
+		}
+	case false:
+		if !cfg.IncludeForks {
+			(*repos)[key] = append((*repos)[key], r)
+
+		}
+	}
+}
+
 // returns a map where the key is the name of the repo and
 // the value is a slice of repos, where each repo belongs to a different client
 func GetRepos(cfg *config.Config) GitRepoMap {
@@ -62,20 +77,17 @@ func GetRepos(cfg *config.Config) GitRepoMap {
 	// resulting in all the items being the same
 	for _, r := range githubRepo {
 		func(r GithubRepo) {
-			key := r.GetName()
-			repos[key] = append(repos[key], &r)
+			appendRepo(&repos, &r, cfg)
 		}(r)
 	}
 	for _, r := range gitlabRepo {
 		func(r GitlabRepo) {
-			key := r.GetName()
-			repos[key] = append(repos[key], &r)
+			appendRepo(&repos, &r, cfg)
 		}(r)
 	}
 	for _, r := range codebergRepo {
 		func(r CodebergRepo) {
-			key := r.GetName()
-			repos[key] = append(repos[key], &r)
+			appendRepo(&repos, &r, cfg)
 		}(r)
 	}
 

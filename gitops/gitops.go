@@ -41,19 +41,12 @@ func addMirrorAsRemote(m clients.GitRepo, repoPath string) {
 		URLs: []string{m.GetURL()},
 	})
 
-	_, err = r.Remote(remoteName)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to add remote:", remoteName)
 		return
 	}
 
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		return
-	}
-
 	fmt.Println("INFO: Added", remoteName, "remote to", repoPath)
-	// TODO: check if remote is being added
 }
 
 func CreateLocalMirrors(m clients.GitRepoMap, cfg *config.Config) {
@@ -67,18 +60,18 @@ func CreateLocalMirrors(m clients.GitRepoMap, cfg *config.Config) {
 	for _, v := range m {
 		for _, r := range v {
 			repoPath := filepath.Join(cachePath, r.GetName())
-			fmt.Println(repoPath)
+
 			if strings.Contains(r.GetURL(), cfg.MainClient) {
 				cloneRepo(r, cfg, repoPath)
+
+				// add remote for mirrors in the main client's repo
+				for _, r := range v {
+					repoPath := filepath.Join(cachePath, r.GetName())
+					addMirrorAsRemote(r, repoPath)
+				}
 			}
+
 		}
 	}
 
-	// add remote for mirrors in the main client's repo
-	for _, v := range m {
-		for _, r := range v {
-			repoPath := filepath.Join(cachePath, r.GetName())
-			addMirrorAsRemote(r, repoPath)
-		}
-	}
 }

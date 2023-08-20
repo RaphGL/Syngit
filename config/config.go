@@ -19,7 +19,8 @@ type (
 		Client     map[string]Client `toml:"client"`
 		// oldest age allowed for repo before deletion
 		// measured in days
-		MaxAge int `toml:"max_age"`
+		MaxAge       int  `toml:"max_age"`
+		IncludeForks bool `toml:"include_forks"`
 	}
 
 	Client struct {
