@@ -12,7 +12,7 @@ import (
 	"github.com/raphgl/syngit/config"
 )
 
-func cloneRepo(r clients.GitRepo, cfg *config.Config, repoPath string) error {
+func cloneRepo(r clients.GitRepo, cfg *config.Config, repoPath string) {
 	repoURL := r.GetURL()
 
 	// appends directory for repo as otherwise the current directory is turned into a git repo
@@ -20,13 +20,13 @@ func cloneRepo(r clients.GitRepo, cfg *config.Config, repoPath string) error {
 		URL:      repoURL,
 		Progress: os.Stdout,
 	})
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-	}
 
-	return nil
+	if err != nil {
+		fmt.Fprintln(os.Stderr, r.GetName(), err.Error())
+	}
 }
 
+// creates a new remote for client in repoPath
 func addMirrorAsRemote(m clients.GitRepo, repoPath string) {
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
@@ -35,6 +35,12 @@ func addMirrorAsRemote(m clients.GitRepo, repoPath string) {
 	}
 
 	remoteName := m.GetClientName()
+
+	_, err = r.Remote(remoteName)
+	// don't do anything if remote exists already
+	if err == nil {
+		return
+	}
 
 	_, err = r.CreateRemote(&gitCfg.RemoteConfig{
 		Name: remoteName,
@@ -62,6 +68,7 @@ func CreateLocalMirrors(m clients.GitRepoMap, cfg *config.Config) {
 			repoPath := filepath.Join(cachePath, r.GetName())
 
 			if strings.Contains(r.GetURL(), cfg.MainClient) {
+				// TODO: make program decide on which repos should be clones based on last update and whether clients are synchronized or not
 				cloneRepo(r, cfg, repoPath)
 
 				// add remote for mirrors in the main client's repo

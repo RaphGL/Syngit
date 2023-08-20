@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -101,7 +102,6 @@ func GetDefaultConfigPath() (string, error) {
 }
 
 func (c *Config) GetRepoCachePath() (string, error) {
-	// TODO: expand tilde and make paths absolute
 	if c.CacheDir == "" {
 		cacheDir, err := os.UserCacheDir()
 		if err != nil {
@@ -111,5 +111,15 @@ func (c *Config) GetRepoCachePath() (string, error) {
 		return filepath.Join(cacheDir, "syngit"), nil
 	}
 
-	return c.CacheDir, nil
+	cacheDir := os.ExpandEnv(c.CacheDir)
+	if strings.HasPrefix(cacheDir, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+
+		cacheDir = filepath.Join(home, cacheDir[2:])
+	}
+
+	return cacheDir, nil
 }

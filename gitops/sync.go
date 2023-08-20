@@ -1,0 +1,3 @@
+package gitops
+
+func SyncMirrors() {}
