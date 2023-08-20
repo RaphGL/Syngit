@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/raphgl/syngit/config"
 )
@@ -13,6 +14,7 @@ type GitlabRepo struct {
 	PathWithNamespace string `json:"path_with_namespace"`
 	Visibility        string `json:"visibility"`
 	HttpURLToRepo     string `json:"http_url_to_repo"`
+	UpdatedAt         string `json:"updated_at"`
 	ForkedFromProject *any   `json:"forked_from_project"`
 }
 
@@ -47,4 +49,17 @@ func (gl *GitlabRepo) IsPrivate() bool {
 
 func (gl *GitlabRepo) IsFork() bool {
 	return gl.ForkedFromProject != nil
+}
+
+func (gl *GitlabRepo) LastUpdated() (*time.Time, error) {
+	tm, err := time.Parse("2006-01-02T15:04:05Z", gl.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tm, nil
+}
+
+func (gl *GitlabRepo) GetClientName() string {
+	return "gitlab"
 }

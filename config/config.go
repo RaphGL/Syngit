@@ -11,10 +11,15 @@ import (
 type (
 	Config struct {
 		// a glob to ignore certain repositories through a pattern
+		MainClient string `toml:"main_client"`
+		// DO NOT USE DIRECTLY
+		// GetRepoCachePath() provides a fallback, use that instead
+		CacheDir   string            `toml:"cache_dir"`
 		GlobIgnore []string          `toml:"glob_ignore"`
-		MainClient string            `toml:"main_client"`
 		Client     map[string]Client `toml:"client"`
-		cacheDir   string            `toml:"cache_dir"`
+		// oldest age allowed for repo before deletion
+		// measured in days
+		MaxAge int `toml:"max_age"`
 	}
 
 	Client struct {
@@ -95,7 +100,8 @@ func GetDefaultConfigPath() (string, error) {
 }
 
 func (c *Config) GetRepoCachePath() (string, error) {
-	if c.cacheDir == "" {
+	// TODO: expand tilde and make paths absolute
+	if c.CacheDir == "" {
 		cacheDir, err := os.UserCacheDir()
 		if err != nil {
 			return "", err
@@ -104,5 +110,5 @@ func (c *Config) GetRepoCachePath() (string, error) {
 		return filepath.Join(cacheDir, "syngit"), nil
 	}
 
-	return c.cacheDir, nil
+	return c.CacheDir, nil
 }

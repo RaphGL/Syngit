@@ -6,6 +6,7 @@ import (
 
 	"github.com/raphgl/syngit/clients"
 	"github.com/raphgl/syngit/config"
+	"github.com/raphgl/syngit/gitops"
 )
 
 var cfg config.Config
@@ -18,9 +19,5 @@ func main() {
 	}
 
 	repos := clients.GetRepos(cfg)
-	for _, mirrors := range repos {
-		for _, m := range mirrors {
-			clients.CloneRepo(m, cfg)
-		}
-	}
+	gitops.CreateLocalMirrors(repos, cfg)
 }

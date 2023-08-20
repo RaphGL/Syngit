@@ -1,10 +1,8 @@
 package clients
 
 import (
-	"fmt"
-	"os"
+	"time"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/raphgl/syngit/config"
 )
 
@@ -17,30 +15,15 @@ type GitRepo interface {
 	GetURL() string
 	IsPrivate() bool
 	IsFork() bool
+	LastUpdated() (*time.Time, error)
+	GetClientName() string
 }
 
-func CloneRepo(r GitRepo, cfg *config.Config) error {
-	repoURL := r.GetURL()
-	cachePath, err := cfg.GetRepoCachePath()
-	if err != nil {
-		return err
-	}
-
-	// appends directory for repo as otherwise the current directory is turned into a git repo
-	_, err = git.PlainClone(cachePath+r.GetName(), false, &git.CloneOptions{
-		URL:      repoURL,
-		Progress: os.Stdout,
-	})
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-	}
-
-	return nil
-}
+type GitRepoMap = map[string][]GitRepo
 
 // returns a map where the key is the name of the repo and
 // the value is a slice of repos, where each repo belongs to a different client
-func GetRepos(cfg *config.Config) map[string][]GitRepo {
+func GetRepos(cfg *config.Config) GitRepoMap {
 	var (
 		githubRepo       []GithubRepo
 		gitlabRepo       []GitlabRepo
@@ -73,7 +56,7 @@ func GetRepos(cfg *config.Config) map[string][]GitRepo {
 
 	// and a slice of all the repos that match said key
 	// aka map[string][]GitClient
-	repos := make(map[string][]GitRepo)
+	repos := make(GitRepoMap)
 
 	// note: capturing is required here, otherwise the r will be mutated into the next value
 	// resulting in all the items being the same

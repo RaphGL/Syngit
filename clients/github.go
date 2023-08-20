@@ -4,16 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/raphgl/syngit/config"
 )
 
 type GithubRepo struct {
-	Name     string `json:"name"`
-	FullName string `json:"full_name"`
-	CloneURL string `json:"clone_url"`
-	Private  bool   `json:"private"`
-	Fork     bool   `json:"fork"`
+	Name      string `json:"name"`
+	FullName  string `json:"full_name"`
+	CloneURL  string `json:"clone_url"`
+	UpdatedAt string `json:"updated_at"`
+	Private   bool   `json:"private"`
+	Fork      bool   `json:"fork"`
 }
 
 func getGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
@@ -47,4 +49,17 @@ func (gr *GithubRepo) IsPrivate() bool {
 
 func (gr *GithubRepo) IsFork() bool {
 	return gr.Fork
+}
+
+func (gr *GithubRepo) LastUpdated() (*time.Time, error) {
+	tm, err := time.Parse("2006-01-02T15:04:05Z", gr.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tm, nil
+}
+
+func (gr *GithubRepo) GetClientName() string {
+	return "github"
 }
