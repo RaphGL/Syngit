@@ -6,6 +6,8 @@ import (
 	"github.com/raphgl/syngit/config"
 )
 
+// TODO: URGENT: add authentication to be able to pull
+// private repos and push changes to client
 type GitRepo interface {
 	// Returns the name of the repository
 	GetName() string
@@ -38,6 +40,7 @@ func addRepoToMap(repos *GitRepoMap, r GitRepo, cfg *config.Config) {
 
 // returns a map where the key is the name of the repo and
 // the value is a slice of repos, where each repo belongs to a different client
+// note: this function only returns repos not disabled by config
 func GetRepos(cfg *config.Config) GitRepoMap {
 	var (
 		githubRepo       []GithubRepo

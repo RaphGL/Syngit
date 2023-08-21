@@ -20,4 +20,5 @@ func main() {
 
 	repos := clients.GetRepos(cfg)
 	gitops.CreateLocalMirrors(repos, cfg)
+	gitops.SyncMirrors(repos, cfg)
 }
