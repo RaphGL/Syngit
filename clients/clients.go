@@ -76,23 +76,21 @@ func GetRepos(cfg *config.Config) GitRepoMap {
 	// aka map[string][]GitClient
 	repos := make(GitRepoMap)
 
-	// note: capturing is required here, otherwise the r will be mutated into the next value
-	// resulting in all the items being the same
+    // note: the r := r is required otherwise range will keep adding to the r pointer
+    // resulting in all values in map pointing to the same repo
 	for _, r := range githubRepo {
-		func(r GithubRepo) {
-			addRepoToMap(&repos, &r, cfg)
-		}(r)
+		r := r
+		addRepoToMap(&repos, &r, cfg)
 	}
 	for _, r := range gitlabRepo {
-		func(r GitlabRepo) {
-			addRepoToMap(&repos, &r, cfg)
-		}(r)
+		r := r
+		addRepoToMap(&repos, &r, cfg)
 	}
 	for _, r := range codebergRepo {
-		func(r CodebergRepo) {
-			addRepoToMap(&repos, &r, cfg)
-		}(r)
+		r := r
+		addRepoToMap(&repos, &r, cfg)
 	}
+
 
 	return repos
 }

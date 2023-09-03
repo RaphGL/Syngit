@@ -68,7 +68,7 @@ func CreateLocalMirrors(m clients.GitRepoMap, cfg *config.Config) {
 			repoPath := filepath.Join(cachePath, r.GetName())
 
 			if strings.Contains(r.GetURL(), cfg.MainClient) {
-				// TODO: make program decide on which repos should be clones based on last update and whether clients are synchronized or not
+				// TODO: make program decide on which repos should be cloned based on last update and whether clients are synchronized or not
 				cloneRepo(r, cfg, repoPath)
 
 				// add remote for mirrors in the main client's repo
