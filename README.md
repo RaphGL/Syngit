@@ -9,13 +9,13 @@
   <h3 align="center">A simple to use repo synchronization tool</h3>
   <p align="center">
     <br />
-    <a href="https://github.com/RaphGL/ProjectName"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/RaphGL/Syngit"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     ·
-    <a href="https://github.com/RaphGL/ProjectName/issues">Report Bug</a>
+    <a href="https://github.com/RaphGL/Syngit/issues">Report Bug</a>
     ·
-    <a href="https://github.com/RaphGL/ProjectName/issues">Request Feature</a>
+    <a href="https://github.com/RaphGL/Syngit/issues">Request Feature</a>
   </p>
 </p>
 
@@ -43,45 +43,61 @@
 
 <!-- ABOUT THE PROJECT -->
 
-Syngit is a CLI and init service that let's you synchronize repositories across different clients (Github, Codeberg, Gitlab, etc) with a very simple interface and configuration file.
+Syngit is a CLI and daemon that lets you synchronize repositories across different clients (Github, Codeberg, Gitlab, etc) with a very simple configuration file.
+Syngit is a tool with no external dependencies (not even git). It contains everything you need, just compile it and run it.
 
 ### Built With
 
-- [Python](https://www.python.org/)
-- [Poetry](https://python-poetry.org/)
-- [AioHttp](https://docs.aiohttp.org/en/stable/)
-- [TOML](https://github.com/uiri/toml)
+- [Go](https://go.dev/)
+- [go-git](https://github.com/go-git/go-git)
 
 <!-- GETTING STARTED -->
 
 ## Getting Started
 
 To get Syngit to work you need to use SSH login on the clients you wish to synchronize. Read [this article on how to set it up](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) if you're uncertain.
+You need a `syngit.toml` in your system's [default config directory](https://pkg.go.dev/os#UserConfigDir). The config file has the following structure:
+
+```toml
+# ignores all files that match the glob pattern, unimplemented!
+glob_ignore = ["*cpp"]
+# your main git client
+main_client = "github"
+# where the cache for syngit should be stored, defaults to https://pkg.go.dev/os#UserCacheDir
+cache_dir = "~/Documents/Test"
+
+[client.codeberg]
+username = "RaphGL"
+token = "my_token"
+
+[client.github]
+username = "RaphGL"
+token = "my_token"
+# temporarily disable client
+disable = true
+
+[client.gitlab]
+username = "RaphGL"
+token = "my_token"
+# repositories to be ignored in client
+ignore = ["repo1", "repo2"]
+```
+
 
 ### Installation
 
-TODO
+```sh
+$ git clone https://github.com/RaphGL/Syngit
+$ cd Syngit
+$ go build
+```
 
 <!-- USAGE EXAMPLES -->
 
 ## Usage
 
 1. Create a `$HOME/.config/syngit.toml` file
-2. Make something akin to this:
-
-```toml
-main_client = "github"
-
-[github]
-username = "RaphGL"
-
-[codeberg]
-username = "RaphGL"
-
-[gitlab]
-username = "RaphGL"
-```
-
+2. Fill out the configuration file 
 3. Enable the syngit service:
 
 ```sh
@@ -92,23 +108,4 @@ $ systemctl enable syngit --now
 
 ## License
 
-Distributed under LICENSE License. See [`LICENSE`](https://github.com/RaphGL/Syngit/blob/main/LICENSE) for more information.
-
-<!-- ACKNOWLEDGEMENTS -->
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-
-[contributors-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
-[contributors-url]: https://github.com/othneildrew/Best-README-Template/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/othneildrew/Best-README-Template.svg?style=for-the-badge
-[forks-url]: https://github.com/othneildrew/Best-README-Template/network/members
-[stars-shield]: https://img.shields.io/github/stars/othneildrew/Best-README-Template.svg?style=for-the-badge
-[stars-url]: https://github.com/othneildrew/Best-README-Template/stargazers
-[issues-shield]: https://img.shields.io/github/issues/othneildrew/Best-README-Template.svg?style=for-the-badge
-[issues-url]: https://github.com/othneildrew/Best-README-Template/issues
-[license-shield]: https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge
-[license-url]: https://github.com/othneildrew/Best-README-Template/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/othneildrew
-[product-screenshot]: images/screenshot.png
-
+Distributed under GPLv3 License. See [`LICENSE`](https://github.com/RaphGL/Syngit/blob/main/LICENSE) for more information.
