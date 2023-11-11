@@ -92,8 +92,8 @@ func GetDefaultConfigPath() (string, error) {
 	// the cfgConfig is checked first, this means it complies with XDG_CONFIG
 	// but falls back to home config in case the user wants it there
 	for _, f := range [...]string{cfgConfig, homeConfig} {
-		_, err := os.Stat(f)
-		if err == nil {
+		_, err = os.Stat(f)
+		if !os.IsNotExist(err) {
 			return f, nil
 		}
 	}

@@ -10,7 +10,7 @@ import (
 	"github.com/raphgl/syngit/config"
 )
 
-func pullChangesFromMainRepo(repoPath string) error {
+func pullChangesFromRepo(repoPath string) error {
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
 		return err
@@ -102,7 +102,7 @@ func SyncMirrors(rm clients.GitRepoMap, cfg *config.Config) {
 	}
 
 	for _, r := range localRepos {
-		if err = pullChangesFromMainRepo(r); err != nil {
+		if err = pullChangesFromRepo(r); err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 		}
 		if err = pushToClientRepo(r, cfg); err != nil {
