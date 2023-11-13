@@ -57,7 +57,7 @@ func LoadConfig() (*Config, error) {
 	// making sure required fields are filled
 	failedCheck := false
 	if len(cfg.MainClient) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: Did not specified what is the `main_client`")
+		fmt.Fprintln(os.Stderr, "Error: Did not specify what is the `main_client`")
 		failedCheck = true
 	}
 
@@ -98,7 +98,7 @@ func GetDefaultConfigPath() (string, error) {
 		}
 	}
 
-	return "", err
+	return "", fmt.Errorf("Couldn't find config file.\nPlease create one in either \"%v\" or \"%v\"", cfgConfig, homeConfig)
 }
 
 func (c *Config) GetRepoCachePath() (string, error) {

@@ -6,8 +6,6 @@ import (
 	"github.com/raphgl/syngit/config"
 )
 
-// TODO: URGENT: add authentication to be able to pull
-// private repos and push changes to client
 type GitRepo interface {
 	// Returns the name of the repository
 	GetName() string
@@ -15,12 +13,17 @@ type GitRepo interface {
 	GetFullName() string
 	// Returns the Git URL for the repository
 	GetURL() string
+    // Returns whether the repository is private or not
 	IsPrivate() bool
+    // Returns whether the repository is a fork of another one
 	IsFork() bool
+    // Returns the last time the repository was committed to
 	LastUpdated() (*time.Time, error)
+    // Returns the name of the Git client/frontend
 	GetClientName() string
 }
 
+// a map where the key is the name of the repo and the value is the slice of all repos with that name (one for each git client)
 type GitRepoMap = map[string][]GitRepo
 
 func addRepoToMap(repos *GitRepoMap, r GitRepo, cfg *config.Config) {
@@ -76,8 +79,8 @@ func GetRepos(cfg *config.Config) GitRepoMap {
 	// aka map[string][]GitClient
 	repos := make(GitRepoMap)
 
-    // note: the r := r is required otherwise range will keep adding to the r pointer
-    // resulting in all values in map pointing to the same repo
+	// note: the r := r is required otherwise range will keep adding to the r pointer
+	// resulting in all values in map pointing to the same repo
 	for _, r := range githubRepo {
 		r := r
 		addRepoToMap(&repos, &r, cfg)
@@ -90,7 +93,6 @@ func GetRepos(cfg *config.Config) GitRepoMap {
 		r := r
 		addRepoToMap(&repos, &r, cfg)
 	}
-
 
 	return repos
 }
