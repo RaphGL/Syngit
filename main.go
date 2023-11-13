@@ -19,6 +19,14 @@ func main() {
 	}
 
 	repos := clients.GetRepos(cfg)
-	gitops.CreateLocalMirrors(repos, cfg)
-	gitops.SyncMirrors(repos, cfg)
+
+	err = gitops.CreateLocalMirrors(repos, cfg)
+	if err != nil {
+        fmt.Fprintln(os.Stderr,"create local mirrors: ", err)
+	}
+
+	err = gitops.SyncMirrors(repos, cfg)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
 }

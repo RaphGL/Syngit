@@ -13,7 +13,7 @@ type GithubRepo struct {
 	Name      string `json:"name"`
 	FullName  string `json:"full_name"`
 	CloneURL  string `json:"clone_url"`
-	UpdatedAt string `json:"updated_at"`
+	UpdatedAt string `json:"pushed_at"`
 	Private   bool   `json:"private"`
 	Fork      bool   `json:"fork"`
 }

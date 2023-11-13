@@ -14,7 +14,7 @@ type GitlabRepo struct {
 	PathWithNamespace string `json:"path_with_namespace"`
 	Visibility        string `json:"visibility"`
 	HttpURLToRepo     string `json:"http_url_to_repo"`
-	UpdatedAt         string `json:"updated_at"`
+	UpdatedAt         string `json:"last_activity_at"`
 	ForkedFromProject *any   `json:"forked_from_project"`
 }
 

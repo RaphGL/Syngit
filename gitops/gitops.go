@@ -3,7 +3,10 @@ package gitops
 import (
 	"os"
 	"path/filepath"
+	"reflect"
+	"time"
 
+	"github.com/raphgl/syngit/clients"
 	"github.com/raphgl/syngit/config"
 )
 
@@ -16,7 +19,10 @@ func GetLocalRepoPaths(cfg *config.Config) ([]string, error) {
 
 	repos, err := os.ReadDir(cachePath)
 	if err != nil {
-		return nil, err
+		err = os.MkdirAll(cachePath, os.ModePerm)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var paths []string
@@ -26,4 +32,25 @@ func GetLocalRepoPaths(cfg *config.Config) ([]string, error) {
 	}
 
 	return paths, nil
+}
+
+func RepoIsOlderThanSpecified(repo clients.GitRepo, cfg *config.Config) (bool, error) {
+	lastUpdated, err := repo.LastUpdated()
+	if err != nil {
+		return false, err
+	}
+
+	var days int
+	if reflect.ValueOf(cfg.MaxAge).IsZero() {
+		days = -30 * 6
+	} else {
+		days = -cfg.MaxAge
+	}
+
+	timeframe := time.Now().AddDate(0, 0, days)
+	if lastUpdated.After(timeframe) {
+		return false, nil
+	} else {
+		return true, nil
+	}
 }

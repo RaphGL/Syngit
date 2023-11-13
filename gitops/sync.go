@@ -94,11 +94,10 @@ func pushToClientRepo(repoPath string, cfg *config.Config) error {
 	return nil
 }
 
-func SyncMirrors(rm clients.GitRepoMap, cfg *config.Config) {
+func SyncMirrors(rm clients.GitRepoMap, cfg *config.Config) error {
 	localRepos, err := GetLocalRepoPaths(cfg)
 	if err != nil {
-		fmt.Fprint(os.Stderr, err.Error())
-		return
+		return err
 	}
 
 	for _, r := range localRepos {
@@ -109,4 +108,6 @@ func SyncMirrors(rm clients.GitRepoMap, cfg *config.Config) {
 			fmt.Fprintln(os.Stderr, err.Error())
 		}
 	}
+
+    return nil
 }
