@@ -20,7 +20,16 @@ type GitlabRepo struct {
 
 func getGitlabRepos(cfg *config.Config) ([]GitlabRepo, error) {
 	APIPoint := fmt.Sprintf("https://gitlab.com/api/v4/users/%s/projects", cfg.Client["gitlab"].Username)
-	res, err := http.Get(APIPoint)
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", APIPoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+cfg.Client["gitlab"].Token)
+
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

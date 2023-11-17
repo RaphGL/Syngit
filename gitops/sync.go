@@ -10,7 +10,7 @@ import (
 	"github.com/raphgl/syngit/config"
 )
 
-func pullChangesFromRepo(repoPath string) error {
+func pullChangesFromRepo(repoPath string, cfg *config.Config) error {
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
 		return err
@@ -21,7 +21,13 @@ func pullChangesFromRepo(repoPath string) error {
 		return err
 	}
 
-	err = w.Pull(&git.PullOptions{RemoteName: "origin"})
+	err = w.Pull(&git.PullOptions{
+		RemoteName: "origin",
+		Auth: &http.BasicAuth{
+			Username: cfg.Client[cfg.MainClient].Username,
+			Password: cfg.Client[cfg.MainClient].Token,
+		},
+	})
 	if err != nil {
 		return err
 	}
@@ -101,7 +107,7 @@ func SyncMirrors(rm clients.GitRepoMap, cfg *config.Config) error {
 	}
 
 	for _, r := range localRepos {
-		if err = pullChangesFromRepo(r); err != nil {
+		if err = pullChangesFromRepo(r, cfg); err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 		}
 		if err = pushToClientRepo(r, cfg); err != nil {
@@ -109,5 +115,5 @@ func SyncMirrors(rm clients.GitRepoMap, cfg *config.Config) error {
 		}
 	}
 
-    return nil
+	return nil
 }

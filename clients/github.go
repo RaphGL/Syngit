@@ -2,7 +2,6 @@ package clients
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -19,8 +18,17 @@ type GithubRepo struct {
 }
 
 func getGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
-	APIPoint := fmt.Sprintf("https://api.github.com/users/%s/repos", cfg.Client["github"].Username)
-	res, err := http.Get(APIPoint)
+	APIPoint := "https://api.github.com/user/repos"
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", APIPoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "token "+cfg.Client["github"].Token)
+
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
