@@ -27,8 +27,10 @@ func GetLocalRepoPaths(cfg *config.Config) ([]string, error) {
 
 	var paths []string
 	for _, r := range repos {
-		repoPath := filepath.Join(cachePath, r.Name())
-		paths = append(paths, repoPath)
+		if r.IsDir() {
+			repoPath := filepath.Join(cachePath, r.Name())
+			paths = append(paths, repoPath)
+		}
 	}
 
 	return paths, nil

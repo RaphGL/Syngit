@@ -2,7 +2,7 @@ package gitops
 
 import (
 	"fmt"
-	"os"
+	"log/slog"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -84,7 +84,7 @@ func pushToClientRepo(repoPath string, cfg *config.Config) error {
 			continue
 		}
 
-		fmt.Println("INFO: Updating", repoPath, "for", remoteName)
+        slog.Info(fmt.Sprintf("Updating %s for %s", repoPath, remoteName))
 		err = r.Push(&git.PushOptions{
 			RemoteName: remoteName,
 			Auth: &http.BasicAuth{
@@ -108,10 +108,10 @@ func SyncMirrors(rm clients.GitRepoMap, cfg *config.Config) error {
 
 	for _, r := range localRepos {
 		if err = pullChangesFromRepo(r, cfg); err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
+            slog.Error(err.Error())
 		}
 		if err = pushToClientRepo(r, cfg); err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
+            slog.Error(err.Error())
 		}
 	}
 

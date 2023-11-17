@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
 	"time"
 
@@ -25,12 +27,14 @@ func synchronizeRepos() {
 
 	err := gitops.CreateLocalMirrors(repos, cfg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "create local mirrors: ", err)
+		slog.Error("Creating local mirrors", err)
+		return
 	}
 
 	err = gitops.SyncMirrors(repos, cfg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		slog.Error("Synchronizing mirrors", err)
+		return
 	}
 }
 
@@ -40,31 +44,48 @@ func main() {
 		return
 	}
 
-	var err error
+	// setup logging
+	logPath, err := config.GetLogFilePath()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0655)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	defer logFile.Close()
+
+	multiOut := io.MultiWriter(logFile, os.Stdout)
+	logger := slog.New(slog.NewTextHandler(multiOut, &slog.HandlerOptions{}))
+	slog.SetDefault(logger)
+
+	// load config
 	cfg, err = config.LoadConfig()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+		slog.Error(err.Error())
 		return
 	}
 
 	// parse commands
 	switch os.Args[1] {
 	case "init":
+		fmt.Println("TODO: this functionality has not yet been implemented.")
 
 	case "run":
 		synchronizeRepos()
 
 	case "daemon":
-		done := make(chan struct{})
-		go func() {
-			defer func() { done <- struct{}{} }()
-			for {
-				timer := time.NewTimer(1 * time.Hour)
-				synchronizeRepos()
-				<-timer.C
-			}
-		}()
-		<-done
+		for {
+			timer := time.NewTimer(1 * time.Hour)
+			synchronizeRepos()
+			<-timer.C
+		}
+
+	default:
+		fmt.Printf(HELP_MSG)
 	}
 
 }

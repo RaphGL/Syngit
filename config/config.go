@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,13 +58,13 @@ func LoadConfig() (*Config, error) {
 	// making sure required fields are filled
 	failedCheck := false
 	if len(cfg.MainClient) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: Did not specify what is the `main_client`")
+		slog.Error("Did not specify what is the `main_client`")
 		failedCheck = true
 	}
 
 	for clientName, client := range cfg.Client {
 		if len(client.Username) == 0 {
-			fmt.Fprintln(os.Stderr, "Error: Missing username for", clientName)
+			slog.Error("Missing username for " + clientName)
 			failedCheck = true
 		}
 	}
@@ -98,9 +99,10 @@ func GetDefaultConfigPath() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("Couldn't find config file.\nPlease create one in either \"%v\" or \"%v\"", cfgConfig, homeConfig)
+	return "", fmt.Errorf("Couldn't find config file. Please create one in '%v' or '%v'", cfgConfig, homeConfig)
 }
 
+// Returns the path for the directory where syngit ought to put all of it's cache
 func (c *Config) GetRepoCachePath() (string, error) {
 	if c.CacheDir == "" {
 		cacheDir, err := os.UserCacheDir()
@@ -122,4 +124,13 @@ func (c *Config) GetRepoCachePath() (string, error) {
 	}
 
 	return cacheDir, nil
+}
+
+func GetLogFilePath() (string, error) {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(cacheDir, "syngit.log"), nil
 }

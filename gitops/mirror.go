@@ -2,6 +2,7 @@ package gitops
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,7 +23,7 @@ func cloneRepo(r clients.GitRepo, cfg *config.Config, repoPath string) {
 	})
 
 	if err != nil {
-		fmt.Fprintln(os.Stderr, r.GetName(), err.Error())
+        slog.Error(r.GetName(), err)
 	}
 }
 
@@ -30,7 +31,7 @@ func cloneRepo(r clients.GitRepo, cfg *config.Config, repoPath string) {
 func addMirrorAsRemote(m clients.GitRepo, repoPath string) {
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+        slog.Error(err.Error())
 		return
 	}
 
@@ -48,11 +49,11 @@ func addMirrorAsRemote(m clients.GitRepo, repoPath string) {
 	})
 
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to add remote:", remoteName)
+		slog.Warn("Failed to add remote " + remoteName)
 		return
 	}
 
-	fmt.Println("INFO: Added", remoteName, "remote to", repoPath)
+	slog.Info(fmt.Sprintf("Added %s remote to %s", remoteName, repoPath))
 }
 
 func CreateLocalMirrors(m clients.GitRepoMap, cfg *config.Config) error {
