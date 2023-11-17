@@ -45,7 +45,7 @@ func createRepoGitHub(repo GitRepo, cfg *config.Config) error {
 	APIPoint := "https://api.github.com/user/repos"
 	client := &http.Client{}
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"name":    repo.GetName(),
 		"private": repo.IsPrivate(),
 	}

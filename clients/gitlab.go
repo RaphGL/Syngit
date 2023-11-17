@@ -45,14 +45,12 @@ func createRepoGitLab(repo GitRepo, cfg *config.Config) error {
 	APIPoint := "https://gitlab.com/api/v4/projects"
 	client := &http.Client{}
 
-	visibility := func() string {
-		if repo.IsPrivate() {
-			return "private"
-		}
-		return "public"
-	}()
+	visibility := "public"
+	if repo.IsPrivate() {
+		visibility = "private"
+	}
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"name":       repo.GetName(),
 		"visibility": visibility,
 	}

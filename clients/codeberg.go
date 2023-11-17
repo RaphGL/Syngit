@@ -46,7 +46,7 @@ func createRepoCodeberg(repo GitRepo, cfg *config.Config) error {
 	APIPoint := "https://codeberg.org/api/v1/users/repos"
 	client := &http.Client{}
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"name":    repo.GetName(),
 		"private": repo.IsPrivate(),
 	}
