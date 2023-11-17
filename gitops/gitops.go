@@ -44,7 +44,7 @@ func RepoIsOlderThanSpecified(repo clients.GitRepo, cfg *config.Config) (bool, e
 
 	var days int
 	if reflect.ValueOf(cfg.MaxAge).IsZero() {
-		days = -30 * 6
+		days = -30 * 1
 	} else {
 		days = -cfg.MaxAge
 	}

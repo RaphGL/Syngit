@@ -2,12 +2,12 @@ package gitops
 
 import (
 	"fmt"
-	"log/slog"
-
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/raphgl/syngit/clients"
 	"github.com/raphgl/syngit/config"
+	"log/slog"
+	"path/filepath"
 )
 
 func pullChangesFromRepo(repoPath string, cfg *config.Config) error {
@@ -84,7 +84,7 @@ func pushToClientRepo(repoPath string, cfg *config.Config) error {
 			continue
 		}
 
-        slog.Info(fmt.Sprintf("Updating %s for %s", repoPath, remoteName))
+		slog.Info(fmt.Sprintf("Updating %s for %s", repoPath, remoteName))
 		err = r.Push(&git.PushOptions{
 			RemoteName: remoteName,
 			Auth: &http.BasicAuth{
@@ -100,6 +100,40 @@ func pushToClientRepo(repoPath string, cfg *config.Config) error {
 	return nil
 }
 
+func repoExists(repo []clients.GitRepo, clientName string) bool {
+	repoExists := false
+	for _, client := range repo {
+		if client.GetClientName() == clientName {
+			repoExists = true
+		}
+	}
+
+	return repoExists
+}
+
+func CreateRepos(repoPath string, cfg *config.Config, m clients.GitRepoMap) error {
+	repoName := filepath.Base(repoPath)
+	repo := m[repoName]
+	createdRepos := false
+
+	for clientName := range cfg.Client {
+		if !repoExists(repo, clientName) && !cfg.Client[clientName].Disable && cfg.Client[clientName].Create {
+			clients.CreateRepo(repo[0], clientName, cfg)
+			createdRepos = true
+		}
+	}
+
+	// Updates the local mirrors to be able to immediately push the code up.
+	if createdRepos {
+		err := CreateLocalMirrors(m, cfg)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func SyncMirrors(rm clients.GitRepoMap, cfg *config.Config) error {
 	localRepos, err := GetLocalRepoPaths(cfg)
 	if err != nil {
@@ -107,11 +141,14 @@ func SyncMirrors(rm clients.GitRepoMap, cfg *config.Config) error {
 	}
 
 	for _, r := range localRepos {
+		if err = CreateRepos(r, cfg, rm); err != nil {
+			slog.Error(err.Error())
+		}
 		if err = pullChangesFromRepo(r, cfg); err != nil {
-            slog.Error(err.Error())
+			slog.Error(err.Error())
 		}
 		if err = pushToClientRepo(r, cfg); err != nil {
-            slog.Error(err.Error())
+			slog.Error(err.Error())
 		}
 	}
 

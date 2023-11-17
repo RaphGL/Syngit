@@ -1,8 +1,10 @@
 package clients
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -38,6 +40,43 @@ func getCodebergRepos(cfg *config.Config) ([]CodebergRepo, error) {
 	json.NewDecoder(res.Body).Decode(&repos)
 
 	return repos, nil
+}
+
+func createRepoCodeberg(repo GitRepo, cfg *config.Config) error {
+	APIPoint := "https://codeberg.org/api/v1/users/repos"
+	client := &http.Client{}
+
+	payload := map[string]interface{}{
+		"name":    repo.GetName(),
+		"private": repo.IsPrivate(),
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", APIPoint, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+cfg.Client["codeberg"].Token)
+
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		slog.Error("Failed to create Codeberg repository. Status code: %d", res.StatusCode)
+		return err
+	}
+
+	fmt.Println(fmt.Sprintf("Codeberg repository name %s created successfully.", repo.GetName()))
+	return nil
+
 }
 
 func (cb *CodebergRepo) GetName() string {

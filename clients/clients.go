@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/raphgl/syngit/config"
@@ -13,13 +14,13 @@ type GitRepo interface {
 	GetFullName() string
 	// Returns the Git URL for the repository
 	GetURL() string
-    // Returns whether the repository is private or not
+	// Returns whether the repository is private or not
 	IsPrivate() bool
-    // Returns whether the repository is a fork of another one
+	// Returns whether the repository is a fork of another one
 	IsFork() bool
-    // Returns the last time the repository was committed to
+	// Returns the last time the repository was committed to
 	LastUpdated() (*time.Time, error)
-    // Returns the name of the Git client/frontend
+	// Returns the name of the Git client/frontend
 	GetClientName() string
 }
 
@@ -95,4 +96,28 @@ func GetRepos(cfg *config.Config) GitRepoMap {
 	}
 
 	return repos
+}
+
+func CreateRepo(repo GitRepo, clientName string, cfg *config.Config) {
+	switch clientName {
+	case "github":
+		err := createRepoGitHub(repo, cfg)
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+	case "gitlab":
+		err := createRepoGitLab(repo, cfg)
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+	case "codeberg":
+		err := createRepoCodeberg(repo, cfg)
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+	}
+
 }
