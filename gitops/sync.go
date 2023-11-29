@@ -93,7 +93,7 @@ func pushToClientRepo(repoPath string, cfg *config.Config) error {
 			},
 		})
 		if err != nil {
-			return err
+			slog.Error(err.Error())
 		}
 	}
 
@@ -113,21 +113,24 @@ func repoExists(repo []clients.GitRepo, clientName string) bool {
 
 func CreateRepos(repoPath string, cfg *config.Config, m clients.GitRepoMap) error {
 	repoName := filepath.Base(repoPath)
-	repo := m[repoName]
-	createdRepos := false
-
-	for clientName := range cfg.Client {
-		if !repoExists(repo, clientName) && !cfg.Client[clientName].Disable && cfg.Client[clientName].Create {
-			clients.CreateRepo(repo[0], clientName, cfg)
-			createdRepos = true
+	repos := m[repoName]
+	var mainRepo clients.GitRepo
+	for _, repo := range repos {
+		if repo.GetClientName() == cfg.MainClient {
+			mainRepo = repo
 		}
 	}
 
-	// Updates the local mirrors to be able to immediately push the code up.
-	if createdRepos {
-		err := CreateLocalMirrors(m, cfg)
-		if err != nil {
-			return err
+	if mainRepo == nil {
+		slog.Error("Failed to find a main client")
+		return nil
+	}
+
+	for clientName := range cfg.Client {
+		if !repoExists(repos, clientName) && !cfg.Client[clientName].Disable && cfg.Client[clientName].Create &&
+			cfg.MainClient != clientName {
+			clients.CreateRepo(mainRepo, clientName, cfg, &m)
+			AddMirrorAsRemote(m[repoName][len(m[repoName])-1], repoPath)
 		}
 	}
 

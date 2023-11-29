@@ -42,8 +42,9 @@ func getCodebergRepos(cfg *config.Config) ([]CodebergRepo, error) {
 	return repos, nil
 }
 
-func createRepoCodeberg(repo GitRepo, cfg *config.Config) error {
-	APIPoint := "https://codeberg.org/api/v1/users/repos"
+func createRepoCodeberg(repo GitRepo, cfg *config.Config) (CodebergRepo, error) {
+	var newRepo CodebergRepo
+	APIPoint := "https://codeberg.org/api/v1/user/repos"
 	client := &http.Client{}
 
 	payload := map[string]any{
@@ -53,12 +54,12 @@ func createRepoCodeberg(repo GitRepo, cfg *config.Config) error {
 
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return newRepo, err
 	}
 
 	req, err := http.NewRequest("POST", APIPoint, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		return err
+		return newRepo, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -66,16 +67,18 @@ func createRepoCodeberg(repo GitRepo, cfg *config.Config) error {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return err
+		return newRepo, err
 	}
 
 	if res.StatusCode != http.StatusCreated {
 		slog.Error("Failed to create Codeberg repository. Status code: %d", res.StatusCode)
-		return err
+		return newRepo, err
 	}
 
+	json.NewDecoder(res.Body).Decode(&newRepo)
+
 	fmt.Println(fmt.Sprintf("Codeberg repository name %s created successfully.", repo.GetName()))
-	return nil
+	return newRepo, nil
 
 }
 

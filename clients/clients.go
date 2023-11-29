@@ -37,7 +37,6 @@ func addRepoToMap(repos *GitRepoMap, r GitRepo, cfg *config.Config) {
 	case false:
 		if !cfg.IncludeForks {
 			(*repos)[key] = append((*repos)[key], r)
-
 		}
 	}
 }
@@ -98,26 +97,29 @@ func GetRepos(cfg *config.Config) GitRepoMap {
 	return repos
 }
 
-func CreateRepo(repo GitRepo, clientName string, cfg *config.Config) {
+func CreateRepo(repo GitRepo, clientName string, cfg *config.Config, repoMap *GitRepoMap) {
 	switch clientName {
 	case "github":
-		err := createRepoGitHub(repo, cfg)
+		newGithubRepo, err := createRepoGitHub(repo, cfg)
 		if err != nil {
 			slog.Error(err.Error())
 			return
 		}
+		addRepoToMap(repoMap, &newGithubRepo, cfg)
 	case "gitlab":
-		err := createRepoGitLab(repo, cfg)
+		newGitlabRepo, err := createRepoGitLab(repo, cfg)
 		if err != nil {
 			slog.Error(err.Error())
 			return
 		}
+		addRepoToMap(repoMap, &newGitlabRepo, cfg)
 	case "codeberg":
-		err := createRepoCodeberg(repo, cfg)
+		newCodebergRepo, err := createRepoCodeberg(repo, cfg)
 		if err != nil {
 			slog.Error(err.Error())
 			return
 		}
+		addRepoToMap(repoMap, &newCodebergRepo, cfg)
 	}
 
 }

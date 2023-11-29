@@ -41,7 +41,8 @@ func getGitlabRepos(cfg *config.Config) ([]GitlabRepo, error) {
 	return repos, nil
 }
 
-func createRepoGitLab(repo GitRepo, cfg *config.Config) error {
+func createRepoGitLab(repo GitRepo, cfg *config.Config) (GitlabRepo, error) {
+	var newRepo GitlabRepo
 	APIPoint := "https://gitlab.com/api/v4/projects"
 	client := &http.Client{}
 
@@ -57,12 +58,12 @@ func createRepoGitLab(repo GitRepo, cfg *config.Config) error {
 
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return newRepo, err
 	}
 
 	req, err := http.NewRequest("POST", APIPoint, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		return err
+		return newRepo, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -70,15 +71,17 @@ func createRepoGitLab(repo GitRepo, cfg *config.Config) error {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return err
+		return newRepo, err
 	}
 
 	if res.StatusCode != http.StatusCreated {
-		return fmt.Errorf("Failed to create GitLab repository. Status code: %d", res.StatusCode)
+		return newRepo, fmt.Errorf("Failed to create GitLab repository. Status code: %d", res.StatusCode)
 	}
 
+	json.NewDecoder(res.Body).Decode(&newRepo)
+
 	fmt.Println(fmt.Sprintf("GitLab repository name %s created successfully.", repo.GetName()))
-	return nil
+	return newRepo, nil
 
 }
 
