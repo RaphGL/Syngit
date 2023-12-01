@@ -37,6 +37,11 @@ func GetLocalRepoPaths(cfg *config.Config) ([]string, error) {
 }
 
 func RepoIsOlderThanSpecified(repo clients.GitRepo, cfg *config.Config) (bool, error) {
+	// negative ages turn off timeframe check
+	if cfg.MaxAge < 0 {
+		return false, nil
+	}
+
 	lastUpdated, err := repo.LastUpdated()
 	if err != nil {
 		return false, err
@@ -44,7 +49,7 @@ func RepoIsOlderThanSpecified(repo clients.GitRepo, cfg *config.Config) (bool, e
 
 	var days int
 	if reflect.ValueOf(cfg.MaxAge).IsZero() {
-		days = -30 * 1
+		days = -30 * 2
 	} else {
 		days = -cfg.MaxAge
 	}

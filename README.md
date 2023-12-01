@@ -6,16 +6,10 @@
     <img src="logo.png" alt="Logo" height="80">
   </a> --->
 
-  <h3 align="center">A simple to use repo synchronization tool</h3>
+  <h1 align="center">Syngit</h3>
+  <p align="center">Synchronize repositories across Git clients</p>
   <p align="center">
     <br />
-    <a href="https://github.com/RaphGL/Syngit"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    ·
-    <a href="https://github.com/RaphGL/Syngit/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/RaphGL/Syngit/issues">Request Feature</a>
   </p>
 </p>
 
@@ -55,14 +49,14 @@ Syngit is a tool with no external dependencies (not even git). It contains every
 
 ## Getting Started
 
-To get Syngit to work you need to use SSH login on the clients you wish to synchronize. Read [this article on how to set it up](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) if you're uncertain.
-You need a `syngit.toml` in your system's [default config directory](https://pkg.go.dev/os#UserConfigDir). The config file has the following structure:
+To use Syngit, make sure you got the tokens/passwords needed to authenticate for your target Git clients (ie Github, GitLab, Codeberg, etc).
+After you've gotten your tokens/passwords you need a `syngit.toml` in your system's [default config directory](https://pkg.go.dev/os#UserConfigDir). The config file has the following structure:
 
 ```toml
-# ignores all files that match the glob pattern, unimplemented!
-glob_ignore = ["*cpp"]
 # your main git client
 main_client = "github"
+# ignores all files that match the glob pattern, unimplemented!
+glob_ignore = ["*cpp"]
 # where the cache for syngit should be stored, defaults to https://pkg.go.dev/os#UserCacheDir
 cache_dir = "~/Documents/Test"
 
@@ -73,13 +67,13 @@ token = "my_token"
 [client.github]
 username = "RaphGL"
 token = "my_token"
-# temporarily disable client
+# temporarily disable synchronization to this client
 disable = true
 
 [client.gitlab]
 username = "RaphGL"
 token = "my_token"
-# repositories to be ignored in client
+# repositories to be ignored on this client
 ignore = ["repo1", "repo2"]
 ```
 
@@ -98,7 +92,7 @@ $ go build
 
 1. Create a `$HOME/.config/syngit.toml` file
 2. Fill out the configuration file 
-3. Enable the syngit service:
+3. Enable the syngit service (WIP):
 
 ```sh
 $ systemctl enable syngit --now
