@@ -1,7 +1,9 @@
 package clients
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -18,7 +20,7 @@ type GithubRepo struct {
 }
 
 func getGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
-	APIPoint := "https://api.github.com/user/repos"
+	APIPoint := "https://api.github.com/user/repos?type=owner&per_page=100"
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", APIPoint, nil)
@@ -37,6 +39,44 @@ func getGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
 	json.NewDecoder(res.Body).Decode(&repos)
 
 	return repos, nil
+}
+
+func createRepoGitHub(repo GitRepo, cfg *config.Config) (GithubRepo, error) {
+	var newRepo GithubRepo
+	APIPoint := "https://api.github.com/user/repos"
+	client := &http.Client{}
+
+	payload := map[string]any{
+		"name":    repo.GetName(),
+		"private": repo.IsPrivate(),
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return newRepo, err
+	}
+
+	req, err := http.NewRequest("POST", APIPoint, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return newRepo, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "token "+cfg.Client["github"].Token)
+
+	res, err := client.Do(req)
+	if err != nil {
+		return newRepo, err
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		return newRepo, fmt.Errorf("Failed to create GitHub repository. Status code: %d", res.StatusCode)
+	}
+
+	json.NewDecoder(res.Body).Decode(&newRepo)
+
+	fmt.Println(fmt.Sprintf("Github repository name %s created successfully.", repo.GetName()))
+	return newRepo, nil
 }
 
 func (gr *GithubRepo) GetName() string {

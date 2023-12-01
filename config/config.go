@@ -33,6 +33,8 @@ type (
 		Disable bool `toml:"disable"`
 		// repositories to be ignored
 		Ignore []string `toml:"ignore"`
+		// create repo if one doesn't exist
+		Create bool `toml:"create"`
 	}
 )
 

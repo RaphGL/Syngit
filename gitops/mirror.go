@@ -2,6 +2,7 @@ package gitops
 
 import (
 	"fmt"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -20,18 +21,24 @@ func cloneRepo(r clients.GitRepo, cfg *config.Config, repoPath string) {
 	_, err := git.PlainClone(repoPath, false, &git.CloneOptions{
 		URL:      repoURL,
 		Progress: os.Stdout,
+		Auth: &http.BasicAuth{
+			Username: cfg.Client[cfg.MainClient].Username,
+			Password: cfg.Client[cfg.MainClient].Token,
+		},
 	})
 
 	if err != nil {
-        slog.Error(r.GetName(), err)
+		slog.Error(r.GetName(), err)
 	}
+
+	slog.Info("Cloning " + r.GetURL())
 }
 
 // creates a new remote for client in repoPath
-func addMirrorAsRemote(m clients.GitRepo, repoPath string) {
+func AddMirrorAsRemote(m clients.GitRepo, repoPath string) {
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
-        slog.Error(err.Error())
+		slog.Error(err.Error())
 		return
 	}
 
@@ -82,7 +89,7 @@ func CreateLocalMirrors(m clients.GitRepoMap, cfg *config.Config) error {
 				// add remote for mirrors in the main client's repo
 				for _, r := range v {
 					repoPath := filepath.Join(cachePath, r.GetName())
-					addMirrorAsRemote(r, repoPath)
+					AddMirrorAsRemote(r, repoPath)
 				}
 			}
 		}

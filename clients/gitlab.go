@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -38,6 +39,50 @@ func getGitlabRepos(cfg *config.Config) ([]GitlabRepo, error) {
 	json.NewDecoder(res.Body).Decode(&repos)
 
 	return repos, nil
+}
+
+func createRepoGitLab(repo GitRepo, cfg *config.Config) (GitlabRepo, error) {
+	var newRepo GitlabRepo
+	APIPoint := "https://gitlab.com/api/v4/projects"
+	client := &http.Client{}
+
+	visibility := "public"
+	if repo.IsPrivate() {
+		visibility = "private"
+	}
+
+	payload := map[string]any{
+		"name":       repo.GetName(),
+		"visibility": visibility,
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return newRepo, err
+	}
+
+	req, err := http.NewRequest("POST", APIPoint, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return newRepo, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+cfg.Client["gitlab"].Token)
+
+	res, err := client.Do(req)
+	if err != nil {
+		return newRepo, err
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		return newRepo, fmt.Errorf("Failed to create GitLab repository. Status code: %d", res.StatusCode)
+	}
+
+	json.NewDecoder(res.Body).Decode(&newRepo)
+
+	fmt.Println(fmt.Sprintf("GitLab repository name %s created successfully.", repo.GetName()))
+	return newRepo, nil
+
 }
 
 func (gl *GitlabRepo) GetName() string {
