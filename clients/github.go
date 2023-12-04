@@ -20,7 +20,36 @@ type GithubRepo struct {
 }
 
 func getGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
-	APIPoint := "https://api.github.com/user/repos?type=owner&per_page=100"
+	resultsPerPage := 100 //max result for github
+	page := 1
+	repos, err := requestGithubRepos(resultsPerPage, page, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// loop through for pagination
+	for len(repos)%resultsPerPage == 0 {
+		page++
+		newRepos, err := requestGithubRepos(resultsPerPage, page, cfg)
+		if err != nil {
+			return nil, err
+		}
+		// prevent infinite loop if no results
+		if len(newRepos) == 0 {
+			break
+		}
+		repos = append(repos, newRepos...)
+	}
+
+	return repos, nil
+}
+
+func requestGithubRepos(resultsPerPage int, pageNumber int, cfg *config.Config) ([]GithubRepo, error) {
+	APIPoint := fmt.Sprintf(
+		"https://api.github.com/user/repos?type=owner&per_page=%d&page=%d",
+		resultsPerPage,
+		pageNumber,
+	)
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", APIPoint, nil)
@@ -37,7 +66,6 @@ func getGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
 
 	var repos []GithubRepo
 	json.NewDecoder(res.Body).Decode(&repos)
-
 	return repos, nil
 }
 

@@ -20,7 +20,37 @@ type GitlabRepo struct {
 }
 
 func getGitlabRepos(cfg *config.Config) ([]GitlabRepo, error) {
-	APIPoint := fmt.Sprintf("https://gitlab.com/api/v4/users/%s/projects", cfg.Client["gitlab"].Username)
+	resultsPerPage := 100 //max result for gitlab
+	page := 1
+	repos, err := requestGitlabRepos(resultsPerPage, page, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// loop through for pagination
+	for len(repos)%resultsPerPage == 0 {
+		page++
+		newRepos, err := requestGitlabRepos(resultsPerPage, page, cfg)
+		if err != nil {
+			return nil, err
+		}
+		// prevent infinite loop if no results
+		if len(newRepos) == 0 {
+			break
+		}
+		repos = append(repos, newRepos...)
+	}
+
+	return repos, nil
+}
+
+func requestGitlabRepos(resultsPerPage int, pageNumber int, cfg *config.Config) ([]GitlabRepo, error) {
+	APIPoint := fmt.Sprintf(
+		"https://gitlab.com/api/v4/users/%s/projects?per_page=%d&page=%d",
+		cfg.Client["gitlab"].Username,
+		resultsPerPage,
+		pageNumber,
+	)
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", APIPoint, nil)
@@ -39,6 +69,7 @@ func getGitlabRepos(cfg *config.Config) ([]GitlabRepo, error) {
 	json.NewDecoder(res.Body).Decode(&repos)
 
 	return repos, nil
+
 }
 
 func createRepoGitLab(repo GitRepo, cfg *config.Config) (GitlabRepo, error) {

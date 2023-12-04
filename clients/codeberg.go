@@ -21,7 +21,37 @@ type CodebergRepo struct {
 }
 
 func getCodebergRepos(cfg *config.Config) ([]CodebergRepo, error) {
-	APIPoint := fmt.Sprintf("https://codeberg.org/api/v1/users/%s/repos", cfg.Client["codeberg"].Username)
+	resultsPerPage := 100 //max result for codeberg
+	page := 1
+	repos, err := requestCodebergRepos(resultsPerPage, page, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// loop through for pagination
+	for len(repos)%resultsPerPage == 0 {
+		page++
+		newRepos, err := requestCodebergRepos(resultsPerPage, page, cfg)
+		if err != nil {
+			return nil, err
+		}
+		// prevent infinite loop if no results
+		if len(newRepos) == 0 {
+			break
+		}
+		repos = append(repos, newRepos...)
+	}
+
+	return repos, nil
+}
+
+func requestCodebergRepos(resultsPerPage int, pageNumber int, cfg *config.Config) ([]CodebergRepo, error) {
+	APIPoint := fmt.Sprintf("https://codeberg.org/api/v1/users/%s/repos?limit=%d&page=%d",
+		cfg.Client["codeberg"].Username,
+		resultsPerPage,
+		pageNumber,
+	)
+
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", APIPoint, nil)
@@ -45,6 +75,7 @@ func getCodebergRepos(cfg *config.Config) ([]CodebergRepo, error) {
 func createRepoCodeberg(repo GitRepo, cfg *config.Config) (CodebergRepo, error) {
 	var newRepo CodebergRepo
 	APIPoint := "https://codeberg.org/api/v1/user/repos"
+
 	client := &http.Client{}
 
 	payload := map[string]any{
