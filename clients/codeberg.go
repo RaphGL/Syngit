@@ -71,7 +71,7 @@ func createRepoCodeberg(repo GitRepo, cfg *config.Config) (CodebergRepo, error) 
 	}
 
 	if res.StatusCode != http.StatusCreated {
-		slog.Error("Failed to create Codeberg repository. Status code: %d", res.StatusCode)
+		slog.Error("Failed to create Codeberg repository. Status code: %d", slog.Int("status code", res.StatusCode))
 		return newRepo, err
 	}
 
