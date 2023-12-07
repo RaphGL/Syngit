@@ -1,10 +1,8 @@
 package clients
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/raphgl/syngit/config"
@@ -22,18 +20,23 @@ type GithubRepo struct {
 func getGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
 	resultsPerPage := 100 //max result for github
 	page := 1
-	repos, err := requestGithubRepos(resultsPerPage, page, cfg)
+	resBody, err := RequestReposAPI("github", resultsPerPage, page, cfg)
 	if err != nil {
 		return nil, err
 	}
+	var repos []GithubRepo
+	json.NewDecoder(resBody).Decode(&repos)
 
 	// loop through for pagination
 	for len(repos)%resultsPerPage == 0 {
 		page++
-		newRepos, err := requestGithubRepos(resultsPerPage, page, cfg)
+
+		newResBody, err := RequestReposAPI("github", resultsPerPage, page, cfg)
 		if err != nil {
 			return nil, err
 		}
+		var newRepos []GithubRepo
+		json.NewDecoder(newResBody).Decode(&newRepos)
 		// prevent infinite loop if no results
 		if len(newRepos) == 0 {
 			break
@@ -44,64 +47,14 @@ func getGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
 	return repos, nil
 }
 
-func requestGithubRepos(resultsPerPage int, pageNumber int, cfg *config.Config) ([]GithubRepo, error) {
-	APIPoint := fmt.Sprintf(
-		"https://api.github.com/user/repos?type=owner&per_page=%d&page=%d",
-		resultsPerPage,
-		pageNumber,
-	)
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", APIPoint, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Authorization", "token "+cfg.Client["github"].Token)
-
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	var repos []GithubRepo
-	json.NewDecoder(res.Body).Decode(&repos)
-	return repos, nil
-}
-
 func createRepoGitHub(repo GitRepo, cfg *config.Config) (GithubRepo, error) {
 	var newRepo GithubRepo
-	APIPoint := "https://api.github.com/user/repos"
-	client := &http.Client{}
-
-	payload := map[string]any{
-		"name":    repo.GetName(),
-		"private": repo.IsPrivate(),
-	}
-
-	payloadBytes, err := json.Marshal(payload)
+	resBody, err := CreateRepoAPI("github", repo, cfg)
 	if err != nil {
 		return newRepo, err
 	}
 
-	req, err := http.NewRequest("POST", APIPoint, bytes.NewBuffer(payloadBytes))
-	if err != nil {
-		return newRepo, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "token "+cfg.Client["github"].Token)
-
-	res, err := client.Do(req)
-	if err != nil {
-		return newRepo, err
-	}
-
-	if res.StatusCode != http.StatusCreated {
-		return newRepo, fmt.Errorf("Failed to create GitHub repository. Status code: %d", res.StatusCode)
-	}
-
-	json.NewDecoder(res.Body).Decode(&newRepo)
+	json.NewDecoder(resBody).Decode(&newRepo)
 
 	fmt.Println(fmt.Sprintf("Github repository name %s created successfully.", repo.GetName()))
 	return newRepo, nil
