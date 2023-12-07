@@ -2,12 +2,15 @@ package gitops
 
 import (
 	"fmt"
+	"log/slog"
+	"path/filepath"
+
 	"github.com/go-git/go-git/v5"
+	gitCfg "github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/raphgl/syngit/clients"
 	"github.com/raphgl/syngit/config"
-	"log/slog"
-	"path/filepath"
 )
 
 func pullChangesFromRepo(repoPath string, cfg *config.Config) error {
@@ -16,55 +19,51 @@ func pullChangesFromRepo(repoPath string, cfg *config.Config) error {
 		return err
 	}
 
-	w, err := r.Worktree()
-	if err != nil {
-		return err
-	}
-
-	err = w.Pull(&git.PullOptions{
-		RemoteName: "origin",
-		Auth: &http.BasicAuth{
-			Username: cfg.Client[cfg.MainClient].Username,
-			Password: cfg.Client[cfg.MainClient].Token,
-		},
+	err = r.Fetch(&git.FetchOptions{
+		RefSpecs: []gitCfg.RefSpec{"refs/*:refs/*"},
 	})
 	if err != nil {
 		return err
 	}
 
+	// retrieve branches in repo
+	refs, err := r.Branches()
+	if err != nil {
+		return err
+	}
+	defer refs.Close()
+	branches := make([]plumbing.ReferenceName, 3)
+	refs.ForEach(func(r *plumbing.Reference) error {
+		branches = append(branches, r.Name())
+		return nil
+	})
+
+	// pull changes from every branch
+	w, err := r.Worktree()
+	if err != nil {
+		return err
+	}
+
+	for _, branchRef := range branches {
+		err = w.Checkout(&git.CheckoutOptions{Branch: branchRef})
+		if err != nil {
+			return err
+		}
+
+		err = w.Pull(&git.PullOptions{
+			RemoteName: cfg.MainClient,
+			Auth: &http.BasicAuth{
+				Username: cfg.Client[cfg.MainClient].Username,
+				Password: cfg.Client[cfg.MainClient].Token,
+			},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
-
-//// TODO: use fetch to get commits for non main client remotes
-//// this will be used on an alternative syncing strategy which allows
-//// for people to commit from different clients and have their changes reflected
-// func fetchInfoForRemotes(repoPath string) error {
-// 	r, err := git.PlainOpen(repoPath)
-// 	if err != nil {
-// 		return err
-// 	}
-//
-// 	remotes, err := r.Remotes()
-// 	if err != nil {
-// 		return err
-// 	}
-//
-// 	for _, remote := range remotes {
-// 		remoteCfg := remote.Config()
-// 		if remoteCfg.Name == "origin" {
-// 			continue
-// 		}
-//
-// 		err = r.Fetch(&git.FetchOptions{
-// 			RemoteName: remoteCfg.Name,
-// 		})
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
-//
-// 	return nil
-// }
 
 func pushToClientRepo(repoPath string, cfg *config.Config) error {
 	r, err := git.PlainOpen(repoPath)
@@ -77,24 +76,49 @@ func pushToClientRepo(repoPath string, cfg *config.Config) error {
 		return err
 	}
 
-	for _, remote := range remotes {
-		remoteName := remote.Config().Name
-		currClient := cfg.Client[remoteName]
-		if remoteName == cfg.MainClient || remoteName == "origin" || currClient.Disable {
+	refs, err := r.Branches()
+	if err != nil {
+		return err
+	}
+	defer refs.Close()
+	branches := make([]plumbing.ReferenceName, 3)
+	refs.ForEach(func(r *plumbing.Reference) error {
+		branches = append(branches, r.Name())
+		return nil
+	})
+
+	w, err := r.Worktree()
+	if err != nil {
+		return err
+	}
+
+	for _, branchRef := range branches {
+		err = w.Checkout(&git.CheckoutOptions{Branch: branchRef})
+		if err != nil {
+			// TODO: find out why checkout doesn't find certain references
 			continue
 		}
 
-		slog.Info(fmt.Sprintf("Updating %s for %s", repoPath, remoteName))
-		err = r.Push(&git.PushOptions{
-			RemoteName: remoteName,
-			Auth: &http.BasicAuth{
-				Username: currClient.Username,
-				Password: currClient.Token,
-			},
-		})
-		if err != nil {
-			slog.Error(err.Error())
+		for _, remote := range remotes {
+			remoteName := remote.Config().Name
+			currClient := cfg.Client[remoteName]
+			if remoteName == cfg.MainClient || remoteName == "origin" || currClient.Disable {
+				continue
+			}
+
+			slog.Info(fmt.Sprintf("Updating %s for %s", repoPath, remoteName))
+			err = r.Push(&git.PushOptions{
+				RemoteName: remoteName,
+				Auth: &http.BasicAuth{
+					Username: currClient.Username,
+					Password: currClient.Token,
+				},
+			})
+			if err != nil {
+				slog.Error(err.Error())
+			}
 		}
+
 	}
 
 	return nil
