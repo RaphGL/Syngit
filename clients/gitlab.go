@@ -13,14 +13,14 @@ type GitlabRepo struct {
 	PathWithNamespace string `json:"path_with_namespace"`
 	Visibility        string `json:"visibility"`
 	HttpURLToRepo     string `json:"http_url_to_repo"`
-	UpdatedAt         string `json:"last_activity_at"`
+	LastActivityAt    string `json:"last_activity_at"`
 	ForkedFromProject *any   `json:"forked_from_project"`
 }
 
 func getGitlabRepos(cfg *config.Config) ([]GitlabRepo, error) {
 	resultsPerPage := 100 //max result for gitlab
 	page := 1
-	resBody, err := RequestReposAPI("gitlab", resultsPerPage, page, cfg)
+	resBody, err := getUserReposAPI("gitlab", resultsPerPage, page, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func getGitlabRepos(cfg *config.Config) ([]GitlabRepo, error) {
 	for len(repos)%resultsPerPage == 0 {
 		page++
 
-		newResBody, err := RequestReposAPI("gitlab", resultsPerPage, page, cfg)
+		newResBody, err := getUserReposAPI("gitlab", resultsPerPage, page, cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -49,7 +49,7 @@ func getGitlabRepos(cfg *config.Config) ([]GitlabRepo, error) {
 
 func createRepoGitlab(repo GitRepo, cfg *config.Config) (GitlabRepo, error) {
 	var newRepo GitlabRepo
-	resBody, err := CreateRepoAPI("gitlab", repo, cfg)
+	resBody, err := createRepoAPI("gitlab", repo, cfg)
 	if err != nil {
 		return newRepo, err
 	}
@@ -81,7 +81,7 @@ func (gl *GitlabRepo) IsFork() bool {
 }
 
 func (gl *GitlabRepo) LastUpdated() (*time.Time, error) {
-	tm, err := time.Parse("2006-01-02T15:04:05Z", gl.UpdatedAt)
+	tm, err := time.Parse("2006-01-02T15:04:05Z", gl.LastActivityAt)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ type CodebergRepo struct {
 func getCodebergRepos(cfg *config.Config) ([]CodebergRepo, error) {
 	resultsPerPage := 100 //max result for gitlab
 	page := 1
-	resBody, err := RequestReposAPI("codeberg", resultsPerPage, page, cfg)
+	resBody, err := getUserReposAPI("codeberg", resultsPerPage, page, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func getCodebergRepos(cfg *config.Config) ([]CodebergRepo, error) {
 	for len(repos)%resultsPerPage == 0 {
 		page++
 
-		newResBody, err := RequestReposAPI("codeberg", resultsPerPage, page, cfg)
+		newResBody, err := getUserReposAPI("codeberg", resultsPerPage, page, cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -49,7 +49,7 @@ func getCodebergRepos(cfg *config.Config) ([]CodebergRepo, error) {
 
 func createRepoCodeberg(repo GitRepo, cfg *config.Config) (CodebergRepo, error) {
 	var newRepo CodebergRepo
-	resBody, err := CreateRepoAPI("codeberg", repo, cfg)
+	resBody, err := createRepoAPI("codeberg", repo, cfg)
 	if err != nil {
 		return newRepo, err
 	}
