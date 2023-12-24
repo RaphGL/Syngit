@@ -107,7 +107,7 @@ func CreateRepo(repo GitRepo, clientName string, cfg *config.Config, repoMap *Gi
 		}
 		addRepoToMap(repoMap, &newGithubRepo, cfg)
 	case "gitlab":
-		newGitlabRepo, err := createRepoGitLab(repo, cfg)
+		newGitlabRepo, err := createRepoGitlab(repo, cfg)
 		if err != nil {
 			slog.Error(err.Error())
 			return

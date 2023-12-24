@@ -1,11 +1,8 @@
 package clients
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"log/slog"
-	"net/http"
 	"time"
 
 	"github.com/raphgl/syngit/config"
@@ -21,65 +18,46 @@ type CodebergRepo struct {
 }
 
 func getCodebergRepos(cfg *config.Config) ([]CodebergRepo, error) {
-	APIPoint := fmt.Sprintf("https://codeberg.org/api/v1/users/%s/repos", cfg.Client["codeberg"].Username)
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", APIPoint, nil)
+	resultsPerPage := 100 //max result for gitlab
+	page := 1
+	resBody, err := getUserReposAPI("codeberg", resultsPerPage, page, cfg)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Authorization", "Bearer "+cfg.Client["codeberg"].Token)
-
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
 	var repos []CodebergRepo
-	json.NewDecoder(res.Body).Decode(&repos)
+	json.NewDecoder(resBody).Decode(&repos)
+
+	// loop through for pagination
+	for len(repos)%resultsPerPage == 0 {
+		page++
+
+		newResBody, err := getUserReposAPI("codeberg", resultsPerPage, page, cfg)
+		if err != nil {
+			return nil, err
+		}
+		var newRepos []CodebergRepo
+		json.NewDecoder(newResBody).Decode(&newRepos)
+		// prevent infinite loop if no results
+		if len(newRepos) == 0 {
+			break
+		}
+		repos = append(repos, newRepos...)
+	}
 
 	return repos, nil
 }
 
 func createRepoCodeberg(repo GitRepo, cfg *config.Config) (CodebergRepo, error) {
 	var newRepo CodebergRepo
-	APIPoint := "https://codeberg.org/api/v1/user/repos"
-	client := &http.Client{}
-
-	payload := map[string]any{
-		"name":    repo.GetName(),
-		"private": repo.IsPrivate(),
-	}
-
-	payloadBytes, err := json.Marshal(payload)
+	resBody, err := createRepoAPI("codeberg", repo, cfg)
 	if err != nil {
 		return newRepo, err
 	}
 
-	req, err := http.NewRequest("POST", APIPoint, bytes.NewBuffer(payloadBytes))
-	if err != nil {
-		return newRepo, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+cfg.Client["codeberg"].Token)
-
-	res, err := client.Do(req)
-	if err != nil {
-		return newRepo, err
-	}
-
-	if res.StatusCode != http.StatusCreated {
-		slog.Error("Failed to create Codeberg repository. Status code: %d", slog.Int("status code", res.StatusCode))
-		return newRepo, err
-	}
-
-	json.NewDecoder(res.Body).Decode(&newRepo)
+	json.NewDecoder(resBody).Decode(&newRepo)
 
 	fmt.Println(fmt.Sprintf("Codeberg repository name %s created successfully.", repo.GetName()))
 	return newRepo, nil
-
 }
 
 func (cb *CodebergRepo) GetName() string {

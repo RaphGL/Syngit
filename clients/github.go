@@ -1,79 +1,60 @@
 package clients
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/raphgl/syngit/config"
 )
 
 type GithubRepo struct {
-	Name      string `json:"name"`
-	FullName  string `json:"full_name"`
-	CloneURL  string `json:"clone_url"`
-	UpdatedAt string `json:"pushed_at"`
-	Private   bool   `json:"private"`
-	Fork      bool   `json:"fork"`
+	Name     string `json:"name"`
+	FullName string `json:"full_name"`
+	CloneURL string `json:"clone_url"`
+	PushedAt string `json:"pushed_at"`
+	Private  bool   `json:"private"`
+	Fork     bool   `json:"fork"`
 }
 
 func getGithubRepos(cfg *config.Config) ([]GithubRepo, error) {
-	APIPoint := "https://api.github.com/user/repos?type=owner&per_page=100"
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", APIPoint, nil)
+	resultsPerPage := 100 //max result for github
+	page := 1
+	resBody, err := getUserReposAPI("github", resultsPerPage, page, cfg)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Authorization", "token "+cfg.Client["github"].Token)
-
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
 	var repos []GithubRepo
-	json.NewDecoder(res.Body).Decode(&repos)
+	json.NewDecoder(resBody).Decode(&repos)
+
+	// loop through for pagination
+	for len(repos)%resultsPerPage == 0 {
+		page++
+
+		newResBody, err := getUserReposAPI("github", resultsPerPage, page, cfg)
+		if err != nil {
+			return nil, err
+		}
+		var newRepos []GithubRepo
+		json.NewDecoder(newResBody).Decode(&newRepos)
+		// prevent infinite loop if no results
+		if len(newRepos) == 0 {
+			break
+		}
+		repos = append(repos, newRepos...)
+	}
 
 	return repos, nil
 }
 
 func createRepoGitHub(repo GitRepo, cfg *config.Config) (GithubRepo, error) {
 	var newRepo GithubRepo
-	APIPoint := "https://api.github.com/user/repos"
-	client := &http.Client{}
-
-	payload := map[string]any{
-		"name":    repo.GetName(),
-		"private": repo.IsPrivate(),
-	}
-
-	payloadBytes, err := json.Marshal(payload)
+	resBody, err := createRepoAPI("github", repo, cfg)
 	if err != nil {
 		return newRepo, err
 	}
 
-	req, err := http.NewRequest("POST", APIPoint, bytes.NewBuffer(payloadBytes))
-	if err != nil {
-		return newRepo, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "token "+cfg.Client["github"].Token)
-
-	res, err := client.Do(req)
-	if err != nil {
-		return newRepo, err
-	}
-
-	if res.StatusCode != http.StatusCreated {
-		return newRepo, fmt.Errorf("Failed to create GitHub repository. Status code: %d", res.StatusCode)
-	}
-
-	json.NewDecoder(res.Body).Decode(&newRepo)
+	json.NewDecoder(resBody).Decode(&newRepo)
 
 	fmt.Println(fmt.Sprintf("Github repository name %s created successfully.", repo.GetName()))
 	return newRepo, nil
@@ -100,7 +81,7 @@ func (gr *GithubRepo) IsFork() bool {
 }
 
 func (gr *GithubRepo) LastUpdated() (*time.Time, error) {
-	tm, err := time.Parse("2006-01-02T15:04:05Z", gr.UpdatedAt)
+	tm, err := time.Parse("2006-01-02T15:04:05Z", gr.PushedAt)
 	if err != nil {
 		return nil, err
 	}
